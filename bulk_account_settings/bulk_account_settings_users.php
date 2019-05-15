@@ -108,14 +108,14 @@
 
 //get all the users' groups from the database
 	$sql = "select ";
-	$sql .= "	gu.*, g.domain_uuid as group_domain_uuid ";
+	$sql .= "	ug.*, g.domain_uuid as group_domain_uuid ";
 	$sql .= "from ";
-	$sql .= "	v_group_users as gu, ";
+	$sql .= "	v_user_groups as ug, ";
 	$sql .= "	v_groups as g ";
 	$sql .= "where ";
-	$sql .= "	gu.group_uuid = g.group_uuid ";
+	$sql .= "	ug.group_uuid = g.group_uuid ";
 	if (!(permission_exists('user_all') && $_GET['showall'] == 'true')) {
-		$sql .= "	and gu.domain_uuid = '".$domain_uuid."' ";
+		$sql .= "	and ug.domain_uuid = '".$domain_uuid."' ";
 	}
 	$sql .= "order by ";
 	$sql .= "	g.domain_uuid desc, ";
@@ -123,8 +123,7 @@
 	$database = new database;
 	$database->select($sql);
 	$result = $database->result;
-
-	if (count($result) > 0) {
+	if (is_array($result)) {
 		foreach($result as $row) {
 			$user_groups[$row['user_uuid']][] = $row['group_name'].(($row['group_domain_uuid'] != '') ? "@".$_SESSION['domains'][$row['group_domain_uuid']]['domain_name'] : null);
 		}
@@ -287,8 +286,8 @@
 	echo "		<form method='get' action=''>\n";
 	echo "			<td style='vertical-align: top; text-align: right; white-space: nowrap;'>\n";
 	echo "				<input type='button' class='btn' alt='".$text['button-back']."' onclick=\"window.location='bulk_account_settings.php'\" value='".$text['button-back']."'>\n";	
-	echo "				<input type='text' class='txt' style='width: 150px' name='search' id='search' value='".$search."'>";
-	echo "				<input type='hidden' class='txt' style='width: 150px' name='option_selected' id='option_selected' value='".$option_selected."'>";
+	echo "				<input type='text' class='txt' style='width: 150px' name='search' id='search' value='".escape($search)."'>";
+	echo "				<input type='hidden' class='txt' style='width: 150px' name='option_selected' id='option_selected' value='".escape($option_selected)."'>";
 	echo "				<input type='submit' class='btn' name='submit' value='".$text['button-search']."'>";
 	if ($paging_controls_mini != '') {
 		echo 			"<span style='margin-left: 15px;'>".$paging_controls_mini."</span>\n";
@@ -308,15 +307,15 @@
 
 	if (strlen($option_selected) > 0) {
 		echo "<form name='users' method='post' action='bulk_account_settings_users_update.php'>\n";
-		echo "<input class='formfld' type='hidden' name='option_selected' maxlength='255' value=\"$option_selected\">\n";
+		echo "<input class='formfld' type='hidden' name='option_selected' maxlength='255' value=\"".escape($option_selected)."\">\n";
 		echo "<table width='auto' border='0' cellpadding='0' cellspacing='0'>\n";
 		echo "<tr>\n";
 		//option is Password
 		if($option_selected == 'password') {
 			echo "<td class='vtable' align='left'>\n";
-			echo "    <input class='formfld' type='password' name='new_setting' maxlength='255' value=\"$new_setting\">\n";
+			echo "    <input class='formfld' type='password' name='new_setting' maxlength='255' value=\"".escape($new_setting)."\">\n";
 			echo "<br />\n";
-			echo $text["description-".$option_selected.""]."\n";
+			echo $text["description-".escape($option_selected).""]."\n";
 			echo "</td>\n";
 		}
 		
@@ -328,7 +327,7 @@
 			echo "    <option value='false'>".$text['label-false']."</option>\n";
 			echo "    </select>\n";
 			echo "    <br />\n";
-			echo $text["description-".$option_selected.""]."\n";
+			echo $text["description-".escape($option_selected).""]."\n";
 			echo "</td>\n";
 		}
 		//option is user_status
@@ -343,7 +342,7 @@
 			echo "			<option value='Do Not Disturb'>".$text['option-do_not_disturb']."</option>\n";
 			echo "		</select>\n";
 			echo "    <br />\n";
-			echo $text["description-".$option_selected.""]."\n";
+			echo $text["description-".escape($option_selected).""]."\n";
 			echo "</td>\n";
 		}
 		//option is user_time_zone
@@ -362,17 +361,17 @@
 						if ($x > 0) {
 							echo "		</optgroup>\n";
 						}
-						echo "		<optgroup label='".$category."'>\n";
+						echo "		<optgroup label='".escape($category)."'>\n";
 					}
 
-						echo "			<option value='".$row."'>".$row."</option>\n";
+						echo "			<option value='".escape($row)."'>".escape($row)."</option>\n";
 
 					$previous_category = $category;
 					$x++;
 				}
 				echo "		</select>\n";
 			echo "    <br />\n";
-			echo $text["description-".$option_selected.""]."\n";
+			echo $text["description-".escape($option_selected).""]."\n";
 			echo "</td>\n";
 		}
 		//option is group
@@ -393,7 +392,7 @@
 					if ($field['group_name'] == "superadmin" && !if_group("superadmin")) { continue; }	//only show the superadmin group to other superadmins
 					if ($field['group_name'] == "admin" && (!if_group("superadmin") && !if_group("admin") )) { continue; }	//only show the admin group to other admins
 					if ( !isset($assigned_groups) || (isset($assigned_groups) && !in_array($field["group_uuid"], $assigned_groups)) ) {
-						echo "	<option value='".$field['group_uuid']."|".$field['group_name']."'>".$field['group_name'].(($field['domain_uuid'] != '') ? "@".$_SESSION['domains'][$field['domain_uuid']]['domain_name'] : null)."</option>\n";
+						echo "	<option value='".escape($field['group_uuid'])."|".escape($field['group_name'])."'>".escape($field['group_name']).(($field['domain_uuid'] != '') ? "@".$_SESSION['domains'][$field['domain_uuid']]['domain_name'] : null)."</option>\n";
 					}
 				}
 				echo "</select>";
@@ -429,11 +428,11 @@ if (is_array($directory)) {
 			$tr_link = (permission_exists('extension_edit')) ? " href='/core/users/user_edit.php?id=".$row['user_uuid']."'" : null;
 			echo "<tr ".$tr_link.">\n";
 			echo "	<td valign='top' class='".$row_style[$c]." tr_link_void' style='text-align: center; vertical-align: middle; padding: 0px;'>";
-			echo "		<input type='checkbox' name='id[]' id='checkbox_".$row['user_uuid']."' value='".$row['user_uuid']."' onclick=\"if (!this.checked) { document.getElementById('chk_all').checked = false; }\">";
+			echo "		<input type='checkbox' name='id[]' id='checkbox_".escape($row['user_uuid'])."' value='".escape($row['user_uuid'])."' onclick=\"if (!this.checked) { document.getElementById('chk_all').checked = false; }\">";
 			echo "	</td>";
 			$user_ids[] = 'checkbox_'.$row['user_uuid'];
-			echo "	<td valign='top' class='".$row_style[$c]."'> ".$row['username']."&nbsp;</td>\n";
-			echo "	<td valign='top' class='".$row_style[$c]."'> ".$row['user_status']."&nbsp;</td>\n";
+			echo "	<td valign='top' class='".$row_style[$c]."'> ".escape($row['username'])."&nbsp;</td>\n";
+			echo "	<td valign='top' class='".$row_style[$c]."'> ".escape($row['user_status'])."&nbsp;</td>\n";
 			echo "	<td valign='top' class='".$row_style[$c]."'>";
 				if (sizeof($user_groups[$row['user_uuid']]) > 0) {
 					echo implode(', ', $user_groups[$row['user_uuid']]);
@@ -444,7 +443,7 @@ if (is_array($directory)) {
 					echo implode(', ', $user_time_zone[$row['user_uuid']]);
 				}
 				echo "&nbsp;</td>\n";
-			echo "	<td valign='top' class='".$row_style[$c]."'> ".$row['user_enabled']."&nbsp;</td>\n";
+			echo "	<td valign='top' class='".$row_style[$c]."'> ".escape($row['user_enabled'])."&nbsp;</td>\n";
 			echo "</tr>\n";
 			$c = ($c) ? 0 : 1;
 		}
