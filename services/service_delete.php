@@ -22,13 +22,11 @@
 
 	Contributor(s):
 	Mark J Crane <markjcrane@fusionpbx.com>
-
-	Call Block is written by Gerrit Visser <gerrit308@gmail.com>
 */
-include "root.php";
+require_once "root.php";
 require_once "resources/require.php";
 require_once "resources/check_auth.php";
-if (permission_exists('sms_delete')) {
+if (permission_exists('service_delete')) {
 	//access granted
 }
 else {
@@ -40,26 +38,23 @@ else {
 	$language = new text;
 	$text = $language->get();
 
-//set the variable
+//get the id
 	if (count($_GET)>0) {
-		$id = $_GET["id"][0];
+		$id = check_str($_GET["id"]);
 	}
 
-//delete the extension
+//delete the data
 	if (strlen($id)>0) {
-
-		//delete the call block
-			$sql = "delete from v_sms_destinations ";
-			$sql .= "where domain_uuid = '".$_SESSION['domain_uuid']."' ";
-			$sql .= "and sms_destination_uuid = '$id' ";
-			$prep_statement = $db->prepare(check_sql($sql));
-			$prep_statement->execute();
-			unset($prep_statement, $sql);
+		$sql = "delete from v_services ";
+		$sql .= "where service_uuid = '$id' ";
+		$prep_statement = $db->prepare(check_sql($sql));
+		$prep_statement->execute();
+		unset($sql);
 	}
 
-	//redirect the browser
-		$_SESSION["message"] = $text['label-delete-complete'];
-		header("Location: sms.php");
-		return;
+//redirect the user
+	message::add($text['message-delete']);
+	header("Location: services.php");
+	return;
 
 ?>
